@@ -14,20 +14,17 @@ from shinywidgets import output_widget
 from shinywidgets import output_widget, render_widget
 from google.cloud import storage
 from scipy.stats import pearsonr  # Import pearsonr for calculating Pearson correlation
-
-#Taigapy can not be used for Shiny Deployment, test only 
+from plotly.graph_objects import Table, Figure
 from taigapy import default_tc3 as tc
 from taigapy.client_v3 import UploadedFile, LocalFormat, TaigaReference
-
-
-
 
 ##############################################################################################################
 #Datasets Used 
 ##############################################################################################################
 
-##############################################################################################################
 
+##############################################################################################################
+#Datasets for Avana Plot
 ParalogScreenQCReport = tc.get(name='paralogscreen08232024-3db1',file='ParalogScreenQCReport')
 ParalogCommonEssentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=20, file='ParalogCommonEssentialControlsFromAVANA')
 ParalogNonessentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=20, file='ParalogNonessentialControlsFromAVANA')
@@ -55,8 +52,6 @@ print("length of common indices", len(common_indices))
 ParalogFullLfcGeneScreen_GPP = ParalogFullLfcGeneScreen_GPP.loc[common_indices]
 AvanaLogfoldChange_GPP = AvanaLogfoldChange_GPP.loc[common_indices]
 print("AvanaLogfoldChange_GPP : ", AvanaLogfoldChange_GPP)
-
-
 ##############################################################################################################
 # # Load static data
 # ParalogFullGuideMap = pd.read_csv('Data/paralogscreen06272024_v9-paralogfullguidemap.csv')
@@ -83,43 +78,11 @@ ParalogFullNormCountsSgrnaSeq = tc.get(name='paralogscreen06062024-938c', versio
 #ParalogRawCountsAllpDNAWells = tc.get(name='paralogscreen06062024-938c', version=5, file='ParalogRawCountsAllpDNAWells')
 #ParalogScreenMap = tc.get(name='paralogscreen06062024-938c', version=5, file='ParalogScreenMap')
 #ParalogScreenQCReport = tc.get(name='paralogscreen06062024-938c', version=5, file='ParalogScreenQCReport')
-ParalogSequenceMap = tc.get(name='paralogscreen06062024-938c', version=5, file='ParalogSequenceMap')
-ParalogSequenceQCReport = tc.get(name='paralogscreen06062024-938c', version=5, file='ParalogSequenceQCReport')
+ParalogSequenceMap = tc.get(name='paralogscreen11122024-7ed6', version=11, file='ParalogSequenceMap') #new version 
 ParalogCommonEssentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=17, file='ParalogCommonEssentialControlsFromAVANA')
 ParalogNonessentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=17, file='ParalogNonessentialControlsFromAVANA')
-
-
-
-
-common_ess = ParalogCommonEssentialControlsFromAVANA["Symbol"]
-none_ess = ParalogNonessentialControlsFromAVANA["Symbol"]
-counted_plates = pd.read_csv('/Users/wangyura/Desktop/shiny2/Data/counted plates - sequenceid-samplename (1).csv')
-celllines = set([line for line, seq_id in zip(counted_plates["CellLine"], counted_plates["SequenceID"]) if "SEL000" in seq_id])
-# avana_list = [line for line in celllines if line not in ['BxPC3', 'CCLFPEDS0001T(PEDS005TSUSP)', 'CCLFPEDS0001T (PEDS005TSUSP)', 'COLO205', 'Hs766T', 'PANC0327', 'SNUC5', 'HCT15', 'LS123', 'SSP25', 'SNUC2A', 'CL34', 'SW1710', 'RBE', 'ICC12', 'LS1034', 'PANC0504']]
-# paralog_list = [line for line in avana_list if line not in ['CORL23', 'PANC1', 'LU65']]
-#avana_list = list(celllines)  # Convert set to list for consistency
-avana_list = [line for line in celllines if line not in ['BxPC3', 'CCLFPEDS0001T(PEDS005TSUSP)', 'CCLFPEDS0001T (PEDS005TSUSP)', 'COLO205', 'Hs766T', 'PANC0327', 'SNUC5','LU65', 'PANC1', 'CORL23','HCT15', 'LS123', 'SSP25', 'SNUC2A', 'CL34', 'SW1710', 'RBE', 'ICC12', 'LS1034', 'PANC0504']]
-paralog_list = avana_list  # Use the same list for paralog_list
-#AvanaLogfoldChange = tc.get(name='internal-24q2-3719', version=87, file='ScreenNaiveGeneScore')  # download_to_cache for raw
-AvanaLogfoldChange = tc.get(name='paralogscreen08232024-3db1', version=11, file='AvanaLogfoldChange')
-print("AvanaLogfoldChange: ", AvanaLogfoldChange)
-AvanaLogfoldChange.set_index("Gene", inplace=True)
-print("AvanaLogfoldChange2: ", AvanaLogfoldChange )
-AvanaLogfoldChange_GPP = AvanaLogfoldChange
-print("AvanaLogfoldChange_GPP: ", AvanaLogfoldChange_GPP)
-ParalogFullLfcGeneScreen = tc.get(name='paralogscreen08232024-3db1', version=11, file='ParalogFullLfcGeneScreen')
-
-ParalogFullLfcGeneScreen.set_index("GuideTargetSymbol", inplace=True)
-
-ParalogFullLfcGeneScreen_GPP = ParalogFullLfcGeneScreen[paralog_list]
-
-common_indices = ParalogFullLfcGeneScreen_GPP.index.intersection(AvanaLogfoldChange_GPP.index)
-print("length of common indices", len(common_indices))
-ParalogFullLfcGeneScreen_GPP = ParalogFullLfcGeneScreen_GPP.loc[common_indices]
-AvanaLogfoldChange_GPP = AvanaLogfoldChange_GPP.loc[common_indices]
-
-print("AvanaLogfoldChange_GPP : ", AvanaLogfoldChange_GPP)
-
+ParalogSequenceQCReport = tc.get(name='paralogscreen11122024-7ed6', version=11, file='ParalogSequenceQCReport') #new version
+ParalogSequenceQCReport = ParalogSequenceQCReport.iloc[:, 1:] #get rid of the first column which is a duplicate of the index
 ##############################################################################################################
 #Google Cloud Set Up 
 ##############################################################################################################
@@ -251,7 +214,6 @@ ParalogFullLfcGeneSeq.set_index('GuideTargetSymbol', inplace=True)
 ##############################################################################################################
 #Shiny UI
 ##############################################################################################################
-
 app_ui = ui.page_fluid(
     ui.input_action_button("show", "Show details of data"),
     ui.layout_sidebar(
@@ -265,17 +227,17 @@ app_ui = ui.page_fluid(
             ),
             ui.input_text("input_value", "Enter value:"),
             ui.output_text_verbatim("output"),
-            #ui.output_text_verbatim("output_avana")
+            # ui.output_text_verbatim("output_avana")
         ),
         ui.layout_column_wrap(
             ui.accordion(
                 ui.accordion_panel(
-                    "Bar Plot",
-                    ui.input_slider("percent_threshold", "Percentage Threshold", 0.0, 1.0, 0.1, step=0.01),
+                    "Counts pooling and saving count data",
+                    ui.input_slider("percent_threshold", "Percentage Threshold", 0.0, 1.0, 0.0, step=0.01),
                     output_widget("generate_bar_plots"),
                 ),
                 ui.accordion_panel(
-                    "Scatter Plot",
+                    "Correlation between the LFC",
                     ui.card(
                         ui.popover(
                             "Options",
@@ -294,18 +256,17 @@ app_ui = ui.page_fluid(
                     full_screen=True,
                 ),
                 ui.accordion_panel(
-                    "Avana Scatter Plot",
+                    "Comparing the spread of LFC’s between our dataset and Avana",
                     ui.card(
                         ui.popover(
                             "Options",
                             ui.input_radio_buttons(
                                 "avana_scatter_plot_data",  # Unique ID for Avana Scatter Plot
-                                "Choose data source:",
+                                "Choose data:",
                                 choices=["Avana", "ParalogFullLfcGeneSeq"],
                                 selected="Avana",
                                 inline=True,
                             ),
-                            title="Data Source Selection",
                         ),
                         class_="d-flex justify-content-between align-items-center",
                     ),
@@ -313,7 +274,7 @@ app_ui = ui.page_fluid(
                     full_screen=True,
                 ),
                 ui.accordion_panel(
-                    "Histogram Plot",
+                    "Positive and negative controls spread",
                     ui.card(
                         ui.card_header(
                             "Histogram Plot",
@@ -334,15 +295,24 @@ app_ui = ui.page_fluid(
                         full_screen=True,
                     ),
                 ),
+                ui.accordion_panel(
+                    "Paralog Sequence QC Report Table",
+                    ui.card(
+                        ui.card_header(
+                            "Table",
+                            class_="d-flex justify-content-between align-items-center",
+                        ),
+                        output_widget("ParalogSeqQC"),
+                        full_screen=True,
+                    ),
+                ),
                 id="acc",
                 open="Bar Plot",
-          
-                )
-    
-        ),
-         title="Paralog Visualization"
-    )
-
+            ),
+            # ui.h2("Paralog Sequence QC Report"),
+            # ui.output_ui("ParalogSeqQC")
+        )
+    ),
 )
 
 ##############################################################################################################
@@ -452,7 +422,6 @@ def server(input, output, session):
     @render_widget
     def generate_bar_plots():
         print("Starting the generate_bar_plots function...")
-        
         data = filtered_data()
 
         if data.empty:
@@ -589,7 +558,7 @@ def server(input, output, session):
 ##############################################################################################################
     @render_widget
     def scatter_matrix_plot():
-    
+        
         sequences = sequence_used()
         print("Sequences used for scatter plot: ", sequences)
         if not sequences:
@@ -631,7 +600,35 @@ def server(input, output, session):
             hover_data={'index': lfc_used.index}
         )
 
+        # Add correlation annotations to each scatter plot
+        for i, x_dim in enumerate(sequences):
+            for j, y_dim in enumerate(sequences):
+                if x_dim != y_dim:  # Skip diagonal plots
+                    # Calculate correlation coefficient
+                    r, _ = pearsonr(lfc_used[x_dim], lfc_used[y_dim])
+                    annotation_text = f"r={r:.2f}"
+
+                    # Determine top-left corner position
+                    x_top_left = lfc_used[x_dim].min()  # Minimum x value
+                    y_top_left = lfc_used[y_dim].max()  # Maximum y value
+
+
+                    # Add annotation to the scatter plot
+                    fig.add_annotation(
+                        text=annotation_text,
+                        xref=f"x{i+1}",  # Match the subplot's x-axis reference
+                        yref=f"y{j+1}",  # Match the subplot's y-axis reference
+                        x=x_top_left,   # Align to the top-left x position
+                        y=y_top_left, 
+                        x=-2.5,
+                        y=1,
+                        showarrow=False,
+                        font=dict(size=10, color="black")
+                    )
+
+        # Adjust marker size for better visibility
         fig.update_traces(marker=dict(size=2))
+
         return fig
 
 ##############################################################################################################
@@ -639,240 +636,132 @@ def server(input, output, session):
 ##############################################################################################################
     @render_widget
     def Avana_scatter_plot():
-        # Ensure we have sequences to use
-        sequences = ['OUMS23', 'SNU308']
-        if not sequences:
-            print("No sequences available for plotting.")
-            return None
+        from plotly.subplots import make_subplots
+        import plotly.graph_objects as go
 
-        # Filter and align data
-        common_index = AvanaLogfoldChange_GPP.index.intersection(ParalogFullLfcGeneScreen_GPP.index)
-        if common_index.empty:
-            print("No common indices available for plotting.")
-            return None
-
-        lfc_avana = AvanaLogfoldChange_GPP.loc[common_index, sequences]
-        lfc_paralog = ParalogFullLfcGeneScreen_GPP.loc[common_index, sequences]
-
-        # Prepare combined DataFrame for plotting
-        combined_data = pd.DataFrame({
-            'AvanaLFC': lfc_avana.stack(),
-            'ParalogLFC': lfc_paralog.stack()
-        }).reset_index()
-        combined_data.columns = ['Gene', 'CellLine', 'AvanaLFC', 'ParalogLFC']
-
-        # Assign TargetType
-        combined_data['TargetType'] = 'Others'
-        combined_data.loc[combined_data['Gene'].isin(common_ess), 'TargetType'] = 'CommonEssentials'
-        combined_data.loc[combined_data['Gene'].isin(none_ess), 'TargetType'] = 'Nonessentials'
-
-        # Define color mapping
-        color_map = {
-            'CommonEssentials': 'red',
-            'Nonessentials': 'blue',
-            'Others': 'grey'
-        }
-
-        # Create scatter plot
-        fig = px.scatter(
-            combined_data,
-            x='AvanaLFC',
-            y='ParalogLFC',
-            color='TargetType',
-            color_discrete_map=color_map,
-            facet_col='CellLine',  # Facet by cell line
-            facet_col_wrap=2,      # Wrap after 2 columns
-            title="Avana vs Paralog Scatter Plot",
-            labels={
-                'AvanaLFC': "Avana mean LFC",
-                'ParalogLFC': "Mean LFC in our screen"
-            },
-            width=900,
-            height=600
+        cols_num = len(paralog_list)  # Number of subplots (columns)
+        
+        # Create subplots with a single row and multiple columns
+        fig = make_subplots(
+            rows=1, cols=cols_num,
+            subplot_titles=[f"Cell Line: {cellline}" for cellline in paralog_list],
+            horizontal_spacing=0.1
         )
 
-        # Simplify facet titles
-        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+        # Iterate over cell lines and create a scatter plot for each
+        for i, cellline in enumerate(paralog_list, start=1):
+            # Filter the data
+            lfc_avana = AvanaLogfoldChange_GPP[cellline].dropna()
+            lfc_paralog = ParalogFullLfcGeneScreen_GPP[cellline].dropna()
 
-        # Add reference lines
-        for shape in [
-            dict(type="line", x0=-6, y0=-6, x1=2, y1=2, line=dict(color="black", width=1)),
-            dict(type="line", x0=-6, y0=0, x1=2, y1=0, line=dict(color="gray", width=1, dash="dash")),
-            dict(type="line", x0=0, y0=-6, x1=0, y1=2, line=dict(color="gray", width=1, dash="dash"))
-        ]:
-            fig.add_shape(**shape)
+            # Use only the intersection of indices to ensure alignment
+            common_index = lfc_avana.index.intersection(lfc_paralog.index)
+            lfc_avana = lfc_avana.loc[common_index]
+            lfc_paralog = lfc_paralog.loc[common_index]
 
-        fig.update_traces(marker=dict(size=6, opacity=0.7))
+            # Define masks for each category
+            mask_common_ess = common_index.isin(common_ess)
+            mask_none_ess = common_index.isin(none_ess)
+            mask_other = ~(mask_common_ess | mask_none_ess)
 
-        # Return the single Plotly figure
+            # Add scatter trace for "Others"
+            fig.add_trace(
+                go.Scatter(
+                    x=lfc_avana[mask_other],
+                    y=lfc_paralog[mask_other],
+                    mode='markers',
+                    marker=dict(size=6, color='gray'),
+                    name="Others",
+                    showlegend=(i == 1)  # Show legend only for the first subplot
+                ),
+                row=1, col=i
+            )
+
+            # Add scatter trace for "CommonEssentials"
+            fig.add_trace(
+                go.Scatter(
+                    x=lfc_avana[mask_common_ess],
+                    y=lfc_paralog[mask_common_ess],
+                    mode='markers',
+                    marker=dict(size=6, color='red'),
+                    name="CommonEssentials",
+                    showlegend=(i == 1)
+                ),
+                row=1, col=i
+            )
+
+            # Add scatter trace for "Nonessentials"
+            fig.add_trace(
+                go.Scatter(
+                    x=lfc_avana[mask_none_ess],
+                    y=lfc_paralog[mask_none_ess],
+                    mode='markers',
+                    marker=dict(size=6, color='blue'),
+                    name="Nonessentials",
+                    showlegend=(i == 1)
+                ),
+                row=1, col=i
+            )
+
+            # Add light red rectangle
+            fig.add_shape(
+                type="rect",
+                x0=-6, y0=-6, x1=-1.5, y1=-1.5,
+                line=dict(color="gray", width=1.5),
+                fillcolor="#fdecec",
+                opacity=0.5,
+                row=1, col=i
+            )
+
+            # Add diagonal, horizontal, and vertical lines
+            fig.add_shape(
+                type="line",
+                x0=-6, y0=-6, x1=2, y1=2,
+                line=dict(color="black", width=1),
+                row=1, col=i
+            )
+            fig.add_shape(
+                type="line",
+                x0=-6, y0=0, x1=2, y1=0,
+                line=dict(color="gray", width=1, dash="dash"),
+                row=1, col=i
+            )
+            fig.add_shape(
+                type="line",
+                x0=0, y0=-6, x1=0, y1=2,
+                line=dict(color="gray", width=1, dash="dash"),
+                row=1, col=i
+            )
+
+            # Calculate Pearson correlation
+            if len(common_index) > 0:
+                correlation, _ = pearsonr(lfc_avana, lfc_paralog)
+                annotation_text = f"r = {correlation:.3f}"
+            else:
+                annotation_text = "r = NaN"
+
+            # Add annotation for Pearson correlation
+            fig.add_annotation(
+                x=-3, y=1,
+                text=annotation_text,
+                showarrow=False,
+                font=dict(size=14),
+                row=1, col=i
+            )
+
+            # Set axis ranges for each subplot
+            fig.update_xaxes(range=[-6, 2], row=1, col=i)
+            fig.update_yaxes(range=[-6, 2], row=1, col=i)
+
+        # Update layout
+        fig.update_layout(
+            height=600,
+            width=600 * cols_num,
+            showlegend=True
+        )
+
         return fig
 
-    # @render_widget
-    # def Avana_scatter_plot():
-    #     data = filtered_data()
-
-    #     if data.empty:
-    #         print("No filtered data available")
-    #         return None
-        
-    #     sequences = data['CellLineID'].unique()
-    
-    #     if len(sequences)==0:
-    #         print("No sequences found in the data")
-    #         return None
-        
-    
-    #     print("Sequence used: ", sequences)
-    #     # Use the unique input ID for Avana Scatter Plot
-    #     data_source = input.scatter_plot_data()
-    #     if data_source == "Avana":
-    #         lfc_used = AvanaLogfoldChange_GPP.loc[:, sequences].copy()  # Use Avana data
-    #     elif data_source == "ParalogFullLfcGeneSeq":
-    #         lfc_used = ParalogFullLfcGeneSeq.loc[:, sequences].copy()
-    #     else:
-    #         lfc_used = pd.DataFrame()
-
-    #     if lfc_used.empty:
-    #         return None
-    #             # Create DataFrame for plotting, merging with Paralog data
-    #     df = lfc_used.merge(ParalogFullLfcGeneScreen_GPP, left_index=True, right_index=True, how='inner', suffixes=('_avana', '_paralog'))
-        
-    #             # Create DataFrame for plotting
-
-    #     df.loc[df.index.isin(common_ess), 'TargetType'] = 'CommonEssentials'
-    #     df.loc[df.index.isin(none_ess), 'TargetType'] = 'Nonessentials'
-    #     df.loc[df.index.str.contains('_'), 'TargetType'] = 'pair'  # If you have pairs
-
-    #     color_map = {
-    #         'CommonEssentials': 'red',
-    #         'Nonessentials': 'blue',
-    #         'pair': 'green',
-    #         'Others': 'grey'
-    #     }
-    # # Create separate figures for each screen
-    #     figs = []
-    #     for screen in sequences:
-    #         fig = px.scatter(
-    #             df,
-    #             x=screen,#screen
-    #             y=screen,#paralog
-    #             color='TargetType',
-    #             color_discrete_map=color_map,
-    #             width=750,
-    #             height=650,
-    #             title=f'Cell Line: {screen}',
-    #             labels={'x': "Avana mean LFC", 'y': "Mean LFC in our screen"},
-    #             hover_data={'index': df.index}
-    #         )
-
-    #     # fig = px.scatter(
-    #     #     df,
-    #     #     x='Avana_LFC',
-    #     #     y='Paralog_LFC',
-    #     #     color='TargetType',
-    #     #     color_discrete_map=color_map,
-    #     #     width=750,
-    #     #     height=650,
-    #     #     title=f'Cell Line: {input.cellline()}',  # Dynamic title
-    #     #     labels={'Avana_LFC': "Avana mean LFC", 'Paralog_LFC': "Mean LFC in our screen"},
-    #     #     hover_data={'index': df.index}
-    #     # )
-
-    #     # Add the rectangle and square annotations
-    #     fig.add_shape(
-    #         type="rect",
-    #         x0=-6, y0=-6, x1=-1.5, y1=-1.5,
-    #         line=dict(color="gray", width=1.5),
-    #         fillcolor="#fdecec",
-    #         opacity=0.5,
-    #         layer="below"
-    #     )
-
-    #     # Add diagonal line
-    #     fig.add_shape(
-    #         type="line",
-    #         x0=-6, y0=-6, x1=2, y1=2,
-    #         line=dict(color="black", width=1),
-    #         layer="below"
-    #     )
-
-    #     # Add dashed lines at x=0 and y=0
-    #     fig.add_shape(
-    #         type="line",
-    #         x0=-6, y0=0, x1=2, y1=0,
-    #         line=dict(color="gray", width=1, dash="dash"),
-    #         layer="below"
-    #     )
-    #     fig.add_shape(
-    #         type="line",
-    #         x0=0, y0=-6, x1=0, y1=2,
-    #         line=dict(color="gray", width=1, dash="dash"),
-    #         layer="below"
-    #     )
-
-    #     # Calculate Pearson correlation for each screen
-    #     # for screen in sequences:
-    #     #     common_index = df.index
-    #     #     if len(common_index) > 0:
-    #     #         correlation, _ = pearsonr(df[f'{screen}_avana'], df[f'{screen}_paralog'])
-    #     #         fig.add_annotation(
-    #     #             x=-3, y=1 - 0.2 * sequences.index(screen),  # Adjust y-position for each annotation
-    #     #             text=f"r ({screen})= {correlation:.3f}",
-    #     #             showarrow=False,
-    #     #             font=dict(size=14)
-    #     #         )
-    #     # Calculate Pearson correlation for this screen
-    #     common_index = df.index
-    #     if len(common_index) > 0:
-    #         correlation, _ = pearsonr(df[screen], df[screen])
-    #         fig.add_annotation(
-    #             x=-3, y=1,
-    #             text=f"r = {correlation:.3f}",
-    #             showarrow=False,
-    #             font=dict(size=14)
-    #         )
-
-    #     fig.update_traces(marker=dict(size=2))
-    #     figs.append(fig)
-    #         # Return a subplot with all the figures
-    #     subplot_fig = make_subplots(rows=len(figs), cols=1)
-    #     for i, fig in enumerate(figs):
-    #         for trace in fig['data']:
-    #             subplot_fig.add_trace(trace, row=i+1, col=1)
-        
-
-    #     return subplot_fig
-
-        # fig.update_traces(marker=dict(size=2))
-        # return fig
-
-    #     lfc_compare_plot = lfc_used.merge(avana_lfc_gene_used, left_index=True, right_index=True)
-    #     lfc_compare_plot['TargetType'] = 'Others'
-    #     lfc_compare_plot.loc[lfc_used.index.isin(ParalogCommonEssentialControlsFromAVANA['DepmapSymbol']), 'TargetType'] = 'CommonEssentials'
-    #     lfc_compare_plot.loc[lfc_used.index.isin(ParalogNonessentialControlsFromAVANA['DepmapSymbol']), 'TargetType'] = 'Nonessentials'
-    #     lfc_compare_plot.loc[lfc_used.index.str.contains('_'), 'TargetType'] = 'pair'
-   
-    #     color_map = {
-    #         'CommonEssentials': 'red',
-    #         'Nonessentials': 'blue',
-    #         'pair': 'green',
-    #         'Others': 'grey'
-    #     }
-
-    #     fig = px.scatter_matrix(
-    #         lfc_used,
-    #         dimensions=sequences,
-    #         width=750,
-    #         height=650,
-    #         color='TargetType',
-    #         color_discrete_map=color_map,
-    #         title='Scatter Matrix',
-    #         labels={col: col for col in sequences},
-    #         hover_data={'index': lfc_compare_plot.index}
-    #     )
-
-    #     fig.update_traces(marker=dict(size=2))
-    #     return fig
 ##############################################################################################################
 # Histograph Plot Logic 
 ##############################################################################################################
@@ -900,56 +789,109 @@ def server(input, output, session):
 # Histograph Plot 
 ##############################################################################################################
 
-def plot_3d_ridge_plot(df, samples):
-    fig = go.Figure()
+    def plot_3d_ridge_plot(df, samples):
+        fig = go.Figure()
 
-    for idx, sample in enumerate(samples):
-        for target in df['TargetType'].unique():
-            subset = df[df['TargetType'] == target]
-            color = colors[target]
+        for idx, sample in enumerate(samples):
+            for target in df['TargetType'].unique():
+                subset = df[df['TargetType'] == target]
+                color = colors[target]
 
-            # Add KDE for the target type
-            kde = gaussian_kde(subset[sample])
-            x = np.linspace(subset[sample].min(), subset[sample].max(), 1000)
-            y = kde(x)
-            z = np.ones_like(x) * idx
+                # Add KDE for the target type
+                kde = gaussian_kde(subset[sample])
+                x = np.linspace(subset[sample].min(), subset[sample].max(), 1000)
+                y = kde(x)
+                z = np.ones_like(x) * idx
 
-            print(f"Sample: {sample}, Target: {target}, X: {x[:5]}, Y: {y[:5]}, Z: [0, 0, 0, 0, 0]")  # Debug print
+                print(f"Sample: {sample}, Target: {target}, X: {x[:5]}, Y: {y[:5]}, Z: [0, 0, 0, 0, 0]")  # Debug print
 
-            fig.add_trace(go.Scatter3d(
-                x=x, y=z, z=y,
-                mode='lines',
-                line=dict(color=color),
-                name=f'{target} - {sample}'
-            ))
+                fig.add_trace(go.Scatter3d(
+                    x=x, y=z, z=y,
+                    mode='lines',
+                    line=dict(color=color),
+                    name=f'{target} - {sample}'
+                ))
 
-            # Calculate and print the correlation coefficient
-            for other_sample in samples:
-                if sample != other_sample:
-                    correlation = np.corrcoef(df[sample], df[other_sample])[0][1]
+                # Calculate and print the correlation coefficient
+                for other_sample in samples:
+                    if sample != other_sample:
+                        correlation = np.corrcoef(df[sample], df[other_sample])[0][1]
+                        correlation_text = f"Correlation between {sample} and {other_sample}: {correlation}"
+                    else:
+                        correlation_text = "Correlation is NA"
                     print(f"Correlation between {sample} and {other_sample}: {correlation}")
 
-    fig.update_layout(
-        title='3D Ridge Plot by TargetType',
-        scene=dict(
-            xaxis_title='Value',
-            yaxis_title='Samples',
-            zaxis_title='Density'
-        ),
-        width=800,
-        height=600
-    )
+        fig.update_layout(
+            title='3D Ridge Plot by TargetType',
+            scene=dict(
+                xaxis_title='Value',
+                yaxis_title='Samples',
+                zaxis_title='Density'
+            ),
+            width=800,
+            height=600
+        )
+        fig.add_annotation(
+            text=  correlation_text,
+            showarrow=False,
+            font=dict(size=14),
+        )
 
-    return fig
+        return fig
 
-#ParalogFullLfcGeneSeq, used for the 3D 
+    #ParalogFullLfcGeneSeq, used for the 3D 
 
-# Define colors for each TargetType
-colors = {
-    'CommonEssentials': 'red',
-    'Nonessentials': 'blue'
-}
+    # Define colors for each TargetType
+    colors = {
+        'CommonEssentials': 'red',
+        'Nonessentials': 'blue'
+    }
 
+##############################################################################################################
+# ParalogSequenceQCReport Table
+##############################################################################################################
+    @render_widget
+    def ParalogSeqQC():
+            # Create a Plotly table
+            # Ensure the DataFrame is valid and has data
+        if ParalogSequenceQCReport.empty:
+            print("ParalogSequenceQCReport is empty")
+            return None
+
+        # Create a Plotly Table
+        fig = Figure(
+            data=[
+                Table(
+                    header=dict(
+                        values=list(ParalogSequenceQCReport.columns),  # Column headers
+                        fill_color="lightgrey",
+                        align="center",
+                        font=dict(size=12),
+                    ),
+                    cells=dict(
+                        values=[ParalogSequenceQCReport[col].tolist() for col in ParalogSequenceQCReport.columns],  # Data
+                        fill_color="white",
+                        align="left",
+                        font=dict(size=10),
+                    ),
+                )
+            ]
+        )
+
+        # Optional: Adjust layout
+        fig.update_layout(
+            title="Paralog Sequence QC Report",
+            margin=dict(l=10, r=10, t=40, b=10),
+        )
+
+        return fig
+        
+##############################################################################################################
+# Average count per guide table Table
+##############################################################################################################
+    # @render.data_frame
+    # def CountPerGuide():
+    #     if 
 ##############################################################################################################
 # Run App
 ##############################################################################################################
