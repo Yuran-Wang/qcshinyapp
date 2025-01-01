@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.graph_objects import Figure, Table
+
 import os
 import io
 from plotly.subplots import make_subplots
@@ -25,13 +27,12 @@ from taigapy.client_v3 import UploadedFile, LocalFormat, TaigaReference
 
 ##############################################################################################################
 #Datasets for Avana Plot
+#Datasets for Avana Plot
 ParalogScreenQCReport = tc.get(name='paralogscreen08232024-3db1',file='ParalogScreenQCReport')
 ParalogCommonEssentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=20, file='ParalogCommonEssentialControlsFromAVANA')
 ParalogNonessentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=20, file='ParalogNonessentialControlsFromAVANA')
 ParalogFullLfcGeneSeq = tc.get(name='paralogscreen08232024-3db1', version=11, file='ParalogFullLfcGeneSeq')
-print("ParalogFullLfcGeneSeq columns before setting index:", ParalogFullLfcGeneSeq.columns.tolist())
-ParalogFullLfcGeneSeq.set_index('GuideTargetSymbol', inplace=True)
-print("ParalogFullLfcGeneSeq index after setting:", ParalogFullLfcGeneSeq.index.name)
+
 common_ess = ParalogCommonEssentialControlsFromAVANA["Symbol"]
 none_ess = ParalogNonessentialControlsFromAVANA["Symbol"]
 paralog_list = ['OUMS23', 'SNU308']
@@ -45,7 +46,6 @@ print("AvanaLogfoldChange_GPP: ", AvanaLogfoldChange_GPP)
 ParalogFullLfcGeneScreen = tc.get(name='paralogscreen08232024-3db1', version=11, file='ParalogFullLfcGeneScreen')
 
 ParalogFullLfcGeneScreen.set_index("GuideTargetSymbol", inplace=True)
-
 ParalogFullLfcGeneScreen_GPP = ParalogFullLfcGeneScreen[paralog_list]
 print("ParalogFullLfcGeneScreen_GPP: ", ParalogFullLfcGeneScreen_GPP)
 
@@ -54,6 +54,8 @@ print("length of common indices", len(common_indices))
 ParalogFullLfcGeneScreen_GPP = ParalogFullLfcGeneScreen_GPP.loc[common_indices]
 AvanaLogfoldChange_GPP = AvanaLogfoldChange_GPP.loc[common_indices]
 print("AvanaLogfoldChange_GPP : ", AvanaLogfoldChange_GPP)
+
+
 ##############################################################################################################
 # # Load static data
 # ParalogFullGuideMap = pd.read_csv('Data/paralogscreen06272024_v9-paralogfullguidemap.csv')
@@ -555,9 +557,9 @@ def server(input, output, session):
 ##############################################################################################################
 # Scatter Plot
 ##############################################################################################################
+
     @render_widget
     def scatter_matrix_plot():
-        
         sequences = sequence_used()
         print("Sequences used for scatter plot: ", sequences)
         if not sequences:
@@ -575,6 +577,7 @@ def server(input, output, session):
         if lfc_used.empty:
             return None
 
+        # Assign TargetType for coloring
         lfc_used['TargetType'] = 'Others'
         lfc_used.loc[lfc_used.index.isin(ParalogCommonEssentialControlsFromAVANA['DepmapSymbol']), 'TargetType'] = 'CommonEssentials'
         lfc_used.loc[lfc_used.index.isin(ParalogNonessentialControlsFromAVANA['DepmapSymbol']), 'TargetType'] = 'Nonessentials'
@@ -587,6 +590,7 @@ def server(input, output, session):
             'Others': 'grey'
         }
 
+        # Create scatter matrix plot
         fig = px.scatter_matrix(
             lfc_used,
             dimensions=sequences,
@@ -599,9 +603,29 @@ def server(input, output, session):
             hover_data={'index': lfc_used.index}
         )
 
-        fig.update_traces(marker=dict(size=2))
-        return fig
+        # Add correlation annotations to each scatter plot
+        for i, x_dim in enumerate(sequences):
+            for j, y_dim in enumerate(sequences):
+                if x_dim != y_dim:  # Skip diagonal plots
+                    # Calculate correlation coefficient
+                    r, _ = pearsonr(lfc_used[x_dim], lfc_used[y_dim])
+                    annotation_text = f"r={r:.2f}"
 
+                    # Add annotation to the scatter plot
+                    fig.add_annotation(
+                        text=annotation_text,
+                        xref=f"x{i+1}",  # Match the subplot's x-axis reference
+                        yref=f"y{j+1}",  # Match the subplot's y-axis reference
+                        x=lfc_used[x_dim].mean(),  # Position annotation at the mean x
+                        y=lfc_used[y_dim].mean(),  # Position annotation at the mean y
+                        showarrow=False,
+                        font=dict(size=10, color="black")
+                    )
+
+        # Adjust marker size for better visibility
+        fig.update_traces(marker=dict(size=2))
+
+        return fig
 ##############################################################################################################
 # Scatter Plot with Avana
 ##############################################################################################################
@@ -609,6 +633,7 @@ def server(input, output, session):
     def Avana_scatter_plot():
         from plotly.subplots import make_subplots
         import plotly.graph_objects as go
+        from scipy.stats import pearsonr
 
         cols_num = len(paralog_list)  # Number of subplots (columns)
         
@@ -813,9 +838,43 @@ def server(input, output, session):
 ##############################################################################################################
 # ParalogSequenceQCReport Table
 ##############################################################################################################
-    @render.ui
-    def ParalogSeqQC_df():
-        return render.DataGrid(ParalogSequenceQCReport,filters=True)
+    @render_widget
+    def ParalogSeqQC():
+        # Create a Plotly table
+        # Ensure the DataFrame is valid and has data
+        if ParalogSequenceQCReport is None or ParalogSequenceQCReport.empty:
+            print("ParalogSequenceQCReport is empty or None")
+            return None
+
+        # Create a Plotly Table
+        fig = Figure(
+            data=[
+                Table(
+                    header=dict(
+                        values=list(ParalogSequenceQCReport.columns),  # Column headers
+                        fill_color="lightgrey",
+                        align="center",
+                        font=dict(size=12),
+                    ),
+                    cells=dict(
+                        values=[ParalogSequenceQCReport[col].tolist() for col in ParalogSequenceQCReport.columns],  # Data
+                        fill_color="white",
+                        align="left",
+                        font=dict(size=10),
+                    ),
+                )
+            ]
+        )
+
+        # Adjust layout
+        fig.update_layout(
+            title="Paralog Sequence QC Report",
+            margin=dict(l=10, r=10, t=40, b=10),
+            height=400,  # Add a fixed height to ensure proper display
+            width=None,  # Allow width to be responsive
+        )
+
+        return fig
     
 ##############################################################################################################
 # Run App
