@@ -1,4 +1,4 @@
-##############################################################################################################
+#############################################################################################################
 #Import Dependency 
 ##############################################################################################################
 import pandas as pd
@@ -14,7 +14,7 @@ from shinywidgets import output_widget
 from shinywidgets import output_widget, render_widget
 from google.cloud import storage
 from scipy.stats import pearsonr  # Import pearsonr for calculating Pearson correlation
-from plotly.graph_objects import Table, Figure
+
 from taigapy import default_tc3 as tc
 from taigapy.client_v3 import UploadedFile, LocalFormat, TaigaReference
 
@@ -29,7 +29,9 @@ ParalogScreenQCReport = tc.get(name='paralogscreen08232024-3db1',file='ParalogSc
 ParalogCommonEssentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=20, file='ParalogCommonEssentialControlsFromAVANA')
 ParalogNonessentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=20, file='ParalogNonessentialControlsFromAVANA')
 ParalogFullLfcGeneSeq = tc.get(name='paralogscreen08232024-3db1', version=11, file='ParalogFullLfcGeneSeq')
-
+print("ParalogFullLfcGeneSeq columns before setting index:", ParalogFullLfcGeneSeq.columns.tolist())
+ParalogFullLfcGeneSeq.set_index('GuideTargetSymbol', inplace=True)
+print("ParalogFullLfcGeneSeq index after setting:", ParalogFullLfcGeneSeq.index.name)
 common_ess = ParalogCommonEssentialControlsFromAVANA["Symbol"]
 none_ess = ParalogNonessentialControlsFromAVANA["Symbol"]
 paralog_list = ['OUMS23', 'SNU308']
@@ -82,7 +84,6 @@ ParalogSequenceMap = tc.get(name='paralogscreen11122024-7ed6', version=11, file=
 ParalogCommonEssentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=17, file='ParalogCommonEssentialControlsFromAVANA')
 ParalogNonessentialControlsFromAVANA = tc.get(name='paralogv2-library-files-d8b3', version=17, file='ParalogNonessentialControlsFromAVANA')
 ParalogSequenceQCReport = tc.get(name='paralogscreen11122024-7ed6', version=11, file='ParalogSequenceQCReport') #new version
-ParalogSequenceQCReport = ParalogSequenceQCReport.iloc[:, 1:] #get rid of the first column which is a duplicate of the index
 ##############################################################################################################
 #Google Cloud Set Up 
 ##############################################################################################################
@@ -308,9 +309,7 @@ app_ui = ui.page_fluid(
                 ),
                 id="acc",
                 open="Bar Plot",
-            ),
-            # ui.h2("Paralog Sequence QC Report"),
-            # ui.output_ui("ParalogSeqQC")
+            )
         )
     ),
 )
@@ -600,35 +599,7 @@ def server(input, output, session):
             hover_data={'index': lfc_used.index}
         )
 
-        # Add correlation annotations to each scatter plot
-        for i, x_dim in enumerate(sequences):
-            for j, y_dim in enumerate(sequences):
-                if x_dim != y_dim:  # Skip diagonal plots
-                    # Calculate correlation coefficient
-                    r, _ = pearsonr(lfc_used[x_dim], lfc_used[y_dim])
-                    annotation_text = f"r={r:.2f}"
-
-                    # Determine top-left corner position
-                    x_top_left = lfc_used[x_dim].min()  # Minimum x value
-                    y_top_left = lfc_used[y_dim].max()  # Maximum y value
-
-
-                    # Add annotation to the scatter plot
-                    fig.add_annotation(
-                        text=annotation_text,
-                        xref=f"x{i+1}",  # Match the subplot's x-axis reference
-                        yref=f"y{j+1}",  # Match the subplot's y-axis reference
-                        x=x_top_left,   # Align to the top-left x position
-                        y=y_top_left, 
-                        x=-2.5,
-                        y=1,
-                        showarrow=False,
-                        font=dict(size=10, color="black")
-                    )
-
-        # Adjust marker size for better visibility
         fig.update_traces(marker=dict(size=2))
-
         return fig
 
 ##############################################################################################################
@@ -816,10 +787,7 @@ def server(input, output, session):
                 for other_sample in samples:
                     if sample != other_sample:
                         correlation = np.corrcoef(df[sample], df[other_sample])[0][1]
-                        correlation_text = f"Correlation between {sample} and {other_sample}: {correlation}"
-                    else:
-                        correlation_text = "Correlation is NA"
-                    print(f"Correlation between {sample} and {other_sample}: {correlation}")
+                        print(f"Correlation between {sample} and {other_sample}: {correlation}")
 
         fig.update_layout(
             title='3D Ridge Plot by TargetType',
@@ -830,11 +798,6 @@ def server(input, output, session):
             ),
             width=800,
             height=600
-        )
-        fig.add_annotation(
-            text=  correlation_text,
-            showarrow=False,
-            font=dict(size=14),
         )
 
         return fig
@@ -850,48 +813,10 @@ def server(input, output, session):
 ##############################################################################################################
 # ParalogSequenceQCReport Table
 ##############################################################################################################
-    @render_widget
-    def ParalogSeqQC():
-            # Create a Plotly table
-            # Ensure the DataFrame is valid and has data
-        if ParalogSequenceQCReport.empty:
-            print("ParalogSequenceQCReport is empty")
-            return None
-
-        # Create a Plotly Table
-        fig = Figure(
-            data=[
-                Table(
-                    header=dict(
-                        values=list(ParalogSequenceQCReport.columns),  # Column headers
-                        fill_color="lightgrey",
-                        align="center",
-                        font=dict(size=12),
-                    ),
-                    cells=dict(
-                        values=[ParalogSequenceQCReport[col].tolist() for col in ParalogSequenceQCReport.columns],  # Data
-                        fill_color="white",
-                        align="left",
-                        font=dict(size=10),
-                    ),
-                )
-            ]
-        )
-
-        # Optional: Adjust layout
-        fig.update_layout(
-            title="Paralog Sequence QC Report",
-            margin=dict(l=10, r=10, t=40, b=10),
-        )
-
-        return fig
-        
-##############################################################################################################
-# Average count per guide table Table
-##############################################################################################################
-    # @render.data_frame
-    # def CountPerGuide():
-    #     if 
+    @render.ui
+    def ParalogSeqQC_df():
+        return render.DataGrid(ParalogSequenceQCReport,filters=True)
+    
 ##############################################################################################################
 # Run App
 ##############################################################################################################
