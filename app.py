@@ -46,7 +46,7 @@ print("AvanaLogfoldChange_GPP: ", AvanaLogfoldChange_GPP)
 ParalogFullLfcGeneScreen = tc.get(name='paralogscreen08232024-3db1', version=11, file='ParalogFullLfcGeneScreen')
 
 ParalogFullLfcGeneScreen.set_index("GuideTargetSymbol", inplace=True)
-ParalogFullLfcGeneScreen_GPP = ParalogFullLfcGeneScreen[paralog_list]
+ParalogFullLfcGeneScreen_GPP = ParalogFullLfcGeneScreen
 print("ParalogFullLfcGeneScreen_GPP: ", ParalogFullLfcGeneScreen_GPP)
 
 common_indices = ParalogFullLfcGeneScreen_GPP.index.intersection(AvanaLogfoldChange_GPP.index)
@@ -394,12 +394,13 @@ def server(input, output, session):
 # sequence_used_avana
 ##############################################################################################################
 
-    # @reactive.Calc
-    # def sequence_used_avana():
-    #     data = filtered_data_avana()  # Use the Avana-specific filtered data
-    #     if data.empty:
-    #         return []
-    #     return data['SequenceID'].unique().tolist()
+    @reactive.Calc
+    def cellLine_used_avana():
+        data = filtered_data()  # Use the Avana-specific filtered data
+        if data.empty:
+            return []
+        return data['CellLineID'].unique().tolist()
+    print("CellLine_used_avana:", cellLine_used_avana)
     
 ##############################################################################################################
 # text output for scatter 
@@ -635,20 +636,21 @@ def server(input, output, session):
         import plotly.graph_objects as go
         from scipy.stats import pearsonr
 
-        cols_num = len(paralog_list)  # Number of subplots (columns)
+        cell_lines = cellLine_used_avana()  # Call the reactive calculation
+        cols_num = len(cell_lines)  # Get length of the result
         
         # Create subplots with a single row and multiple columns
         fig = make_subplots(
             rows=1, cols=cols_num,
-            subplot_titles=[f"Cell Line: {cellline}" for cellline in paralog_list],
+            subplot_titles=[f"Cell Line: {cellline}" for cellline in cell_lines],
             horizontal_spacing=0.1
         )
 
         # Iterate over cell lines and create a scatter plot for each
-        for i, cellline in enumerate(paralog_list, start=1):
+        for i, cellline in enumerate(cell_lines, start=1):
             # Filter the data
             lfc_avana = AvanaLogfoldChange_GPP[cellline].dropna()
-            lfc_paralog = ParalogFullLfcGeneScreen_GPP[cellline].dropna()
+            lfc_paralog = ParalogFullLfcGeneScreen[cellline].dropna()
 
             # Use only the intersection of indices to ensure alignment
             common_index = lfc_avana.index.intersection(lfc_paralog.index)
